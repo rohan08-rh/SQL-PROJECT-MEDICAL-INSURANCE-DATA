@@ -122,3 +122,55 @@ FROM (
       AND diabetic = 'No'
 ) t
 WHERE t.row_num = 1;
+
+
+-- Q13) What percentage of patients are smokers for each age group?
+SELECT *,COUNT(CASE WHEN smoker ='Yes' THEN 1 END) OVER(PARTITION BY age)/COUNT(smoker) OVER(PARTITION BY age) 
+FROM data.insurance_data;
+
+
+-- Q14) What is the difference between each patient's claim and the first claim in the dataset?
+SELECT *,claim-FIRST_VALUE(claim) OVER()
+FROM data.insurance_data;
+
+
+-- Q15) How does each patient's claim compare with the average claim of patients having the same number of children?
+SELECT *,AVG(claim) OVER(PARTITION BY children)-claim
+FROM data.insurance_data;
+
+
+-- Q16) What is the maximum BMI and dense rank of patients within each region?
+SELECT *,MAX(bmi) OVER(PARTITION BY region),
+DENSE_RANK() OVER(PARTITION BY region)
+FROM data.insurance_data;
+
+
+-- Q17) What is the difference between the claim of each patient and the claim associated with the maximum BMI in their region?
+SELECT t1.claim-t2.claim FROM data.insurance_data t1
+JOIN (SELECT PatientID,age,claim,MAX(bmi) OVER(PARTITION BY region) FROM data.insurance_data) t2
+ON t1.PatientI-t2.PatientID;
+
+
+-- Q18) What is the difference between each patient's claim and the first claim in their region when ordered by BMI in descending order?
+SELECT *,claim-FIRST_VALUE(claim) OVER(PARTITION BY region ORDER BY bmi DESC ) AS 'analysed_claim' 
+FROM data.insurance_data;
+
+
+-- Q19) What is the difference between the highest claim and each patient's claim for each region, BMI, and smoking status?
+SELECT FIRST_VALUE(claim) OVER(PARTITION BY region,bmi,smoker ORDER BY claim DESC)-claim AS 'analysed_claim'
+FROM data.insurance_data
+ORDER BY 'analysed_claim' DESC;
+
+
+-- Q20) What is the maximum claim among the current patient and the next two patients?
+SELECT *, MAX(claim) OVER(ROWS BETWEEN CURRENT ROW AND 2 FOLLOWING ) FROM data.insurance_data;
+
+
+-- Q21) What is the average claim for the current patient and the previous two patients?
+SELECT *, AVG(claim) OVER(ROWS BETWEEN 2 PRECEDING AND CURRENT ROW) FROM data.insurance_data;
+
+
+-- Q22) What is the first claim for each region and gender among patients with a BMI between 25 and 30 who are not diabetic?
+SELECT *,FIRST_VALUE(claim) OVER(PARTITION BY region,gender) FROM data.insurance_data
+WHERE bmi BETWEEN 25 AND 30 AND diabetic='No'
+ORDER BY age;
